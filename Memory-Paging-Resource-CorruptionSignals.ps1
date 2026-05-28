@@ -6,36 +6,33 @@ $Queries = @(
     @{ LogName = 'Microsoft-Windows-Resource-Exhaustion-Detector/Operational'; Id = 1202 }
 )
 
+# Loop through queries and gather results
 $Results = foreach ($Q in $Queries) {
-    try {
-        # Look back 7 days to keep scan times fast and data relevant
-        Get-WinEvent -FilterHashtable @{
-            LogName   = $Q.LogName
-            Id        = $Q.Id
-            StartTime = (Get-Date).AddDays(-7)
-        } -ErrorAction SilentlyContinue | ForEach-Object {
-            [PSCustomObject]@{
-                TimeCreated = $_.TimeCreated
-                EventID     = $_.Id
-                LogName     = $_.LogName
-                Message     = $_.Message -replace "`r`n", " " # Flattens message for easier reading in PDQ
-                Source      = $_.ProviderName
-            }
+    # -ErrorAction SilentlyContinue safely ignores missing logs or empty queries
+    Get-WinEvent -FilterHashtable @{
+        LogName   = $Q.LogName
+        Id        = $Q.Id
+        StartTime = (Get-Date).AddDays(-7)
+    } -ErrorAction SilentlyContinue | ForEach-Object {
+        [PSCustomObject]@{
+            TimeCreated = $_.TimeCreated
+            EventID     = $_.Id
+            LogName     = $_.LogName
+            Message     = $_.Message -replace "`r`n", " " # Flattens message for PDQ
+            Source      = $_.ProviderName
         }
-    } catch {
-        # Explicitly ignore logs that don't exist on older OS versions
     }
 }
 
+# Output results if found, otherwise output a schema-friendly "All Clear" status
 if ($Results) {
     $Results | Sort-Object TimeCreated -Descending
 } else {
-    # Keeps PDQ happy by returning an empty structure if clean
     [PSCustomObject]@{
-        TimeCreated = "N/A"
-        EventID     = "None"
-        LogName     = "None"
-        Message     = "No corruption or resource exhaustion events found in the last 7 days."
-        Source      = "None"
+        TimeCreated = (Get-Date)  # Keeps the column typed as a Date/Time in PDQ (acts as Scan Time)
+        EventID     = 0           # Keeps the column typed as an Integer
+        LogName     = 'Status'
+        Message     = 'No disk corruption or resource exhaustion events found in the last 7 days.'
+        Source      = 'PDQ Scanner'
     }
 }
