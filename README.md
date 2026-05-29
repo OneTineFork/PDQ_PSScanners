@@ -27,3 +27,5 @@ TemperatureCheck: This one is just for fun.
 WHEA-PotentialHardwareFailure: Again, too many positive results. This one looks for critical and error events from Microsoft-Windows-WHEA-Logger in the last 2 weeks. Digging into the event details individually is probably not feasible, it'd be a full time job by itself.
 
 WMIRepositoryVerification: Self explanatory. So far no positives, but I'll leave this scanner disabled and turn it on for a few days at a time to see if it ever identifies actionable issues.
+
+DNS Server Basic Diag: This is the product of flailing about in response to dcdiag results indicating we've got issues with dns forwarders and root hints. While we're still in the troubleshooting phase, we may have found a completely separate solution to the perceived symptom (mapped drive disconnects), and it's possible that dcdiag is complaining about a problem that doesn't really exist.
